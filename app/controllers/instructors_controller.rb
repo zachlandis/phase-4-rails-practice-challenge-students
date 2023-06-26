@@ -1,4 +1,6 @@
 class InstructorsController < ApplicationController
+    rescue_from ActiveRecord::RecordInvalid, with: :render_unprocessable_entity_response
+    rescue_from ActiveRecord::RecordNotFound, with: :render_not_found_response
 
     def index
         instructors = Instructor.all
@@ -10,9 +12,14 @@ class InstructorsController < ApplicationController
         render json: instructor, status: :ok
     end
 
+    def create
+        instructor = Instructor.create!(instructor_params)
+        render json: instructor, status: :created
+    end
+
     def update
         instructor = Instructor.find(params[:id])
-        instructor.update(instructor_params)
+        instructor.update!(instructor_params)
         render json: instructor, status: :ok
     end
 
@@ -29,7 +36,11 @@ class InstructorsController < ApplicationController
         params.permit(:name)
     end
     
-    def find_instructor
-        instructor = Instructor.find(params[:id])
+    def render_not_found_response
+        render json: {errors: "Instructor not found"}, status: :not_found
+    end
+
+    def render_unprocessable_entity_response(exception)
+        render json: {errors: exception.record.errors.full_messages}, status: :unprocessable_entity
     end
 end
